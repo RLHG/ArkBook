@@ -7,6 +7,7 @@ import com.rhodes.arkbook.ArkBookApp
 import com.rhodes.arkbook.data.*
 import com.rhodes.arkbook.repository.MonthlyStats
 import com.rhodes.arkbook.repository.TransactionRepository
+import com.rhodes.arkbook.utils.NotificationHelper
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
 import java.util.*
@@ -58,7 +59,20 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
                     date = date
                 )
             )
-            loadMonthlyStats()
+            // 重新加载统计数据并检查预算
+            val stats = repository.getMonthlyStats(_currentYear.value, _currentMonth.value)
+            _monthlyStats.value = stats
+
+            if (type == TransactionType.EXPENSE) {
+                val currentSettings = settings.value
+                if (currentSettings.isBudgetAlertEnabled && currentSettings.monthlyBudget > 0 && stats.totalExpense > currentSettings.monthlyBudget) {
+                    NotificationHelper.sendBudgetAlertNotification(
+                        getApplication(),
+                        currentSettings.monthlyBudget,
+                        stats.totalExpense
+                    )
+                }
+            }
         }
     }
 
@@ -72,6 +86,8 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
     fun updateSettings(newSettings: AppSettings) {
         viewModelScope.launch {
             repository.updateSettings(newSettings)
+            // 设置更改后，重新安排定时提醒
+            NotificationHelper.scheduleDailyReminder(getApplication(), newSettings)
         }
     }
 

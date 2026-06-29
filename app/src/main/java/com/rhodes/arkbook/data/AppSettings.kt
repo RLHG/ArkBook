@@ -17,6 +17,10 @@ class AppSettingsRepository(private val context: Context) {
         val MONTHLY_BUDGET = doublePreferencesKey("monthly_budget")
         val USERNAME = stringPreferencesKey("username")
         val THEME_MODE = stringPreferencesKey("theme_mode")
+        val IS_REMINDER_ENABLED = booleanPreferencesKey("is_reminder_enabled")
+        val REMINDER_HOUR = intPreferencesKey("reminder_hour")
+        val REMINDER_MINUTE = intPreferencesKey("reminder_minute")
+        val IS_BUDGET_ALERT_ENABLED = booleanPreferencesKey("is_budget_alert_enabled")
     }
 
     val settings: Flow<AppSettings> = context.dataStore.data.map { prefs ->
@@ -25,7 +29,11 @@ class AppSettingsRepository(private val context: Context) {
             allowanceDay = prefs[Keys.ALLOWANCE_DAY] ?: 1,
             monthlyBudget = prefs[Keys.MONTHLY_BUDGET] ?: 3000.0,
             username = prefs[Keys.USERNAME] ?: "博士",
-            themeMode = ThemeMode.valueOf(prefs[Keys.THEME_MODE] ?: ThemeMode.SYSTEM.name)
+            themeMode = ThemeMode.valueOf(prefs[Keys.THEME_MODE] ?: ThemeMode.SYSTEM.name),
+            isReminderEnabled = prefs[Keys.IS_REMINDER_ENABLED] ?: true,
+            reminderHour = prefs[Keys.REMINDER_HOUR] ?: 20,
+            reminderMinute = prefs[Keys.REMINDER_MINUTE] ?: 0,
+            isBudgetAlertEnabled = prefs[Keys.IS_BUDGET_ALERT_ENABLED] ?: true
         )
     }
 
@@ -52,6 +60,10 @@ class AppSettingsRepository(private val context: Context) {
             prefs[Keys.MONTHLY_BUDGET] = settings.monthlyBudget
             prefs[Keys.USERNAME] = settings.username
             prefs[Keys.THEME_MODE] = settings.themeMode.name
+            prefs[Keys.IS_REMINDER_ENABLED] = settings.isReminderEnabled
+            prefs[Keys.REMINDER_HOUR] = settings.reminderHour
+            prefs[Keys.REMINDER_MINUTE] = settings.reminderMinute
+            prefs[Keys.IS_BUDGET_ALERT_ENABLED] = settings.isBudgetAlertEnabled
         }
     }
 }
@@ -67,5 +79,9 @@ data class AppSettings(
     val allowanceDay: Int = 1,
     val monthlyBudget: Double = 3000.0,
     val username: String = "博士",
-    val themeMode: ThemeMode = ThemeMode.SYSTEM
+    val themeMode: ThemeMode = ThemeMode.SYSTEM,
+    val isReminderEnabled: Boolean = true,
+    val reminderHour: Int = 20,
+    val reminderMinute: Int = 0,
+    val isBudgetAlertEnabled: Boolean = true
 )

@@ -74,6 +74,9 @@ dependencies {
     // DataStore for settings
     implementation("androidx.datastore:datastore-preferences:1.1.1")
 
+    // WorkManager
+    implementation("androidx.work:work-runtime-ktx:2.10.0")
+
     // Testing
     testImplementation("junit:junit:4.13.2")
     androidTestImplementation("androidx.test.ext:junit:1.2.1")

@@ -1,12 +1,19 @@
 package com.rhodes.arkbook
 
 import android.app.Application
+import android.content.Intent
+import android.content.pm.PackageManager
+import android.os.Build
 import android.os.Bundle
+import android.provider.Settings
 import android.widget.Toast
 import androidx.activity.ComponentActivity
+import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.animation.*
+import androidx.core.content.ContextCompat
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -169,12 +176,26 @@ class MainActivity : ComponentActivity() {
                         }
                         composable(Screen.Settings.route) {
                             val context = LocalContext.current
+                            
                             SettingsScreen(
                                 settings = settings,
                                 onSettingsChange = viewModel::updateSettings,
                                 onExport = { exportData(context, transactions, settings) },
                                 onImport = { importData(context, viewModel) },
-                                onClearAll = viewModel::deleteAllData
+                                onClearAll = viewModel::deleteAllData,
+                                onOpenNotificationSettings = {
+                                    val intent = Intent().apply {
+                                        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                                            action = Settings.ACTION_APP_NOTIFICATION_SETTINGS
+                                            putExtra(Settings.EXTRA_APP_PACKAGE, context.packageName)
+                                        } else {
+                                            action = "android.settings.APP_NOTIFICATION_SETTINGS"
+                                            putExtra("app_package", context.packageName)
+                                            putExtra("app_uid", context.applicationInfo.uid)
+                                        }
+                                    }
+                                    context.startActivity(intent)
+                                }
                             )
                         }
                         composable(Screen.AddRecord.route) {

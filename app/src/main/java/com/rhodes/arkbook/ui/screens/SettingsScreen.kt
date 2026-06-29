@@ -29,7 +29,8 @@ fun SettingsScreen(
     onSettingsChange: (AppSettings) -> Unit,
     onExport: () -> Unit,
     onImport: () -> Unit,
-    onClearAll: () -> Unit
+    onClearAll: () -> Unit,
+    onOpenNotificationSettings: () -> Unit
 ) {
     var showClearConfirm by remember { mutableStateOf(false) }
     var username by remember(settings.username) { mutableStateOf(settings.username) }
@@ -130,6 +131,60 @@ fun SettingsScreen(
                     allowanceDay = it
                     onSettingsChange(settings.copy(allowanceDay = it))
                 }
+            )
+        }
+
+        Spacer(modifier = Modifier.height(20.dp))
+
+        // Notification Settings
+        SectionTitle("通知设置")
+        Spacer(modifier = Modifier.height(8.dp))
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .clip(RoundedCornerShape(16.dp))
+                .background(ArkColors.Surface)
+                .border(1.dp, ArkColors.Border.copy(alpha = 0.5f), RoundedCornerShape(16.dp))
+        ) {
+            SettingsSwitchItem(
+                icon = { Icon(Icons.Default.NotificationsActive, null, tint = ArkColors.Primary, modifier = Modifier.size(18.dp)) },
+                title = "每日记账提醒",
+                subtitle = "当天未记账时发送提醒",
+                checked = settings.isReminderEnabled,
+                onCheckedChange = { onSettingsChange(settings.copy(isReminderEnabled = it)) }
+            )
+
+            if (settings.isReminderEnabled) {
+                Divider(color = ArkColors.Divider, modifier = Modifier.padding(horizontal = 16.dp))
+                SettingsTimePickerItem(
+                    icon = { Icon(Icons.Default.AccessTime, null, tint = ArkColors.Accent, modifier = Modifier.size(18.dp)) },
+                    title = "提醒时间",
+                    subtitle = "当前设定：${"%02d:%02d".format(settings.reminderHour, settings.reminderMinute)}",
+                    hour = settings.reminderHour,
+                    minute = settings.reminderMinute,
+                    onTimeSelected = { h, m -> 
+                        onSettingsChange(settings.copy(reminderHour = h, reminderMinute = m))
+                    }
+                )
+            }
+
+            Divider(color = ArkColors.Divider, modifier = Modifier.padding(horizontal = 16.dp))
+
+            SettingsSwitchItem(
+                icon = { Icon(Icons.Default.WarningAmber, null, tint = ArkColors.Expense, modifier = Modifier.size(18.dp)) },
+                title = "预算超支预警",
+                subtitle = "支出超过预算时发送通知",
+                checked = settings.isBudgetAlertEnabled,
+                onCheckedChange = { onSettingsChange(settings.copy(isBudgetAlertEnabled = it)) }
+            )
+            
+            Divider(color = ArkColors.Divider, modifier = Modifier.padding(horizontal = 16.dp))
+
+            SettingsClickItem(
+                icon = { Icon(Icons.Default.Notifications, null, tint = ArkColors.Primary, modifier = Modifier.size(18.dp)) },
+                title = "通知权限管理",
+                subtitle = "前往系统设置管理通知权限",
+                onClick = onOpenNotificationSettings
             )
         }
 
@@ -510,6 +565,143 @@ private fun SettingsDaySelector(
                 color = ArkColors.TextPrimary,
                 fontWeight = FontWeight.Medium
             )
+        }
+    }
+}
+
+@Composable
+private fun SettingsSwitchItem(
+    icon: @Composable () -> Unit,
+    title: String,
+    subtitle: String,
+    checked: Boolean,
+    onCheckedChange: (Boolean) -> Unit
+) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(16.dp),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Box(
+            modifier = Modifier
+                .size(36.dp)
+                .clip(RoundedCornerShape(10.dp))
+                .background(ArkColors.SurfaceLight),
+            contentAlignment = Alignment.Center
+        ) {
+            icon()
+        }
+        Spacer(modifier = Modifier.width(12.dp))
+        Column(modifier = Modifier.weight(1f)) {
+            Text(
+                text = title,
+                style = MaterialTheme.typography.bodyLarge,
+                color = ArkColors.TextPrimary
+            )
+            Text(
+                text = subtitle,
+                style = MaterialTheme.typography.labelSmall,
+                color = ArkColors.TextTertiary
+            )
+        }
+        Switch(
+            checked = checked,
+            onCheckedChange = onCheckedChange,
+            colors = SwitchDefaults.colors(
+                checkedThumbColor = ArkColors.OnPrimary,
+                checkedTrackColor = ArkColors.Primary,
+                uncheckedThumbColor = ArkColors.TextTertiary,
+                uncheckedTrackColor = ArkColors.SurfaceLight
+            )
+        )
+    }
+}
+
+@Composable
+private fun SettingsTimePickerItem(
+    icon: @Composable () -> Unit,
+    title: String,
+    subtitle: String,
+    hour: Int,
+    minute: Int,
+    onTimeSelected: (Int, Int) -> Unit
+) {
+    var showDialog by remember { mutableStateOf(false) }
+
+    if (showDialog) {
+        // 使用一个简单的对话框来选择时间，因为 Material3 的 TimePicker 可能需要更多配置
+        // 这里我们用两个滚动选择器或简单的数字输入
+        var selectedHour by remember { mutableStateOf(hour) }
+        var selectedMinute by remember { mutableStateOf(minute) }
+
+        AlertDialog(
+            onDismissRequest = { showDialog = false },
+            containerColor = ArkColors.Surface,
+            title = { Text("选择提醒时间", color = ArkColors.TextPrimary) },
+            text = {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.Center,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    // 小时
+                    NumberPicker(
+                        value = selectedHour,
+                        range = 0..23,
+                        onValueChange = { selectedHour = it }
+                    )
+                    Text(" : ", style = MaterialTheme.typography.headlineMedium, color = ArkColors.TextPrimary)
+                    // 分钟
+                    NumberPicker(
+                        value = selectedMinute,
+                        range = 0..59,
+                        onValueChange = { selectedMinute = it }
+                    )
+                }
+            },
+            confirmButton = {
+                TextButton(onClick = {
+                    onTimeSelected(selectedHour, selectedMinute)
+                    showDialog = false
+                }) {
+                    Text("确定", color = ArkColors.Primary)
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { showDialog = false }) {
+                    Text("取消", color = ArkColors.TextSecondary)
+                }
+            }
+        )
+    }
+
+    SettingsClickItem(
+        icon = icon,
+        title = title,
+        subtitle = subtitle,
+        onClick = { showDialog = true }
+    )
+}
+
+@Composable
+private fun NumberPicker(
+    value: Int,
+    range: IntRange,
+    onValueChange: (Int) -> Unit
+) {
+    Column(horizontalAlignment = Alignment.CenterHorizontally) {
+        IconButton(onClick = { if (value < range.last) onValueChange(value + 1) else onValueChange(range.first) }) {
+            Icon(Icons.Default.KeyboardArrowUp, null, tint = ArkColors.Primary)
+        }
+        Text(
+            text = "%02d".format(value),
+            style = MaterialTheme.typography.headlineMedium,
+            color = ArkColors.TextPrimary,
+            modifier = Modifier.padding(vertical = 8.dp)
+        )
+        IconButton(onClick = { if (value > range.first) onValueChange(value - 1) else onValueChange(range.last) }) {
+            Icon(Icons.Default.KeyboardArrowDown, null, tint = ArkColors.Primary)
         }
     }
 }
